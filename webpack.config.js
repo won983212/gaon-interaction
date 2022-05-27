@@ -4,8 +4,7 @@ const path = require('path');
 module.exports = {
     entry: './src/index.ts',
     output: {
-        filename: 'index.js',
-        libraryTarget: 'this'
+        filename: 'index.js'
     },
     target: 'node',
     module: {
