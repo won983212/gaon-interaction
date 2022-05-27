@@ -1,5 +1,6 @@
 /dist
 /node_modules
+/logs
 config.json
 
 # Webstorm files

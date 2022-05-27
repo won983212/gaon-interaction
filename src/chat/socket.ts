@@ -1,7 +1,7 @@
 import { SocketInitializer } from '@/socket';
 import { IMessage } from '@/types';
 import dayjs from 'dayjs';
-import logger from 'jet-logger';
+import logger from '@/logger';
 
 export const chatSocketInitializer: SocketInitializer = (io) => {
     io.of('/chat').on('connection', (socket) => {

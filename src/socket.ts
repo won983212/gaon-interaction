@@ -3,8 +3,8 @@ import http from 'http';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import { IUser, UserIdentifier } from './types';
 import { getUserInfo } from './api/auth';
-import logger from 'jet-logger';
 import { chatSocketInitializer } from '@/chat/socket';
+import logger from '@/logger';
 
 export interface SocketData {
     userToken: UserIdentifier;
@@ -27,7 +27,7 @@ function socket(httpServer: http.Server) {
         const userId = socket.handshake.auth.userId;
         const token = socket.handshake.auth.token;
 
-        logger.info('auth: ' + userId + ' ' + token);
+        logger.info('Request auth: ' + userId + ' ' + token);
         if (!userId || !token) {
             return next(new Error('Invaild auth info.'));
         }
@@ -43,7 +43,9 @@ function socket(httpServer: http.Server) {
         }
     });
 
+    // middlewares
     io = chatSocketInitializer(io);
+
     return io;
 }
 

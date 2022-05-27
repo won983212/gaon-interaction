@@ -1,11 +1,11 @@
 import morgan from 'morgan';
 import http from 'http';
-import logger from 'jet-logger';
 import helmet from 'helmet';
 import StatusCodes from 'http-status-codes';
 import express, { NextFunction, Request, Response } from 'express';
 import router from './routes';
 import socket from './socket';
+import logger from '@/logger';
 
 const app = express();
 
@@ -23,7 +23,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use('/', router);
 
 app.use((err: Error, _: Request, res: Response, __: NextFunction) => {
-    logger.err(err, true);
+    logger.error(err);
     return res.status(StatusCodes.BAD_REQUEST).json({
         error: err.message
     });

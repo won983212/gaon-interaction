@@ -1,6 +1,6 @@
-import logger from 'jet-logger';
 import server from './server';
 import config from '../config.json';
+import logger from '@/logger';
 
 const port = process.env.PORT || config.port;
 
