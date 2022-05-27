@@ -3,14 +3,9 @@
     "target": "es2016",
     /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
     "module": "commonjs",
-    /* Specify what module code is generated. */
-    "rootDir": "./",
-    /* Specify the root folder within your source files. */
-    "baseUrl": ".",
+    "baseUrl": "./",
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"]
     },
     "moduleResolution": "node",
     /* Specify how TypeScript looks up a file from a given module specifier. */
@@ -32,5 +27,8 @@
   ],
   "exclude": [
     "node_modules"
-  ]
+  ],
+  "ts-node": {
+    "files": true
+  }
 }

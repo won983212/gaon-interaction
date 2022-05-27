@@ -4,25 +4,32 @@ import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import { IUser, UserIdentifier } from './types';
 import { getUserInfo } from './api/auth';
 import logger from 'jet-logger';
+import { chatSocketInitializer } from '@/chat/socket';
 
 export interface SocketData {
     userToken: UserIdentifier;
     user: IUser;
 }
 
+export type SocketInitializer = (
+    io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, SocketData>
+) => Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, SocketData>;
+
 function socket(httpServer: http.Server) {
-    const io = new Server<
+    let io = new Server<
         DefaultEventsMap,
         DefaultEventsMap,
         DefaultEventsMap,
         SocketData
     >(httpServer);
 
-    io.use(async (socket, next) => {
+    io.of('/chat').use(async (socket, next) => {
         const userId = socket.handshake.auth.userId;
         const token = socket.handshake.auth.token;
+
+        logger.info('auth: ' + userId + ' ' + token);
         if (!userId || !token) {
-            return next(new Error('Invaild token'));
+            return next(new Error('Invaild auth info.'));
         }
 
         try {
@@ -36,16 +43,7 @@ function socket(httpServer: http.Server) {
         }
     });
 
-    io.on('connection', (socket) => {
-        socket.emit('message', 'Welcome! ' + socket.data.user?.username);
-
-        socket.broadcast.emit('user connected', socket.data.user?.username);
-
-        socket.on('disconnect', () => {
-            socket.broadcast.emit('user disconnected', socket.id);
-        });
-    });
-
+    io = chatSocketInitializer(io);
     return io;
 }
 

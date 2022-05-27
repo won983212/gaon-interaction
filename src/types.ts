@@ -13,3 +13,9 @@ export interface IUser {
     status: IStatus;
     job: string;
 }
+
+export interface IMessage {
+    sender: string;
+    message: string;
+    date: number;
+}

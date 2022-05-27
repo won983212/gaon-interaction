@@ -2,7 +2,7 @@
   "name": "gaon-interaction",
   "version": "1.0.0",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon ./src/index.ts",
+    "dev": "cross-env NODE_ENV=development nodemon --exec ts-node -r tsconfig-paths/register --files src/index.ts --watch src -e ts",
     "start": "npx webpack --mode production && cross-env NODE_ENV=production node ./dist/index.js"
   },
   "author": "",
@@ -10,6 +10,7 @@
   "dependencies": {
     "axios": "^0.27.2",
     "cookie-parser": "~1.4.4",
+    "dayjs": "^1.11.2",
     "debug": "~2.6.9",
     "express": "~4.16.1",
     "helmet": "^5.1.0",
@@ -17,6 +18,7 @@
     "jet-logger": "^1.1.5",
     "morgan": "~1.9.1",
     "socket.io": "^4.5.1",
+    "tsconfig-paths": "^4.0.0",
     "webpack": "^5.72.0",
     "webpack-node-externals": "^3.0.0"
   },

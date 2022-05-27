@@ -1,5 +1,5 @@
 import axios, { AxiosRequestHeaders } from 'axios';
-import apiconfig from '../../config.json';
+import apiconfig from '@/../config.json';
 
 export function get<T = any>(url: string, headers?: AxiosRequestHeaders) {
     return axios.get<T>(apiUrl(url), {
