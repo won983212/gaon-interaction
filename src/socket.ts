@@ -6,6 +6,7 @@ import { getUserInfo } from './api/auth';
 import logger from '@/logger';
 import cookie from 'cookie';
 import dayjs from 'dayjs';
+import MessageStore from '@/chat/messageStore';
 
 export interface SocketData {
     userToken: UserIdentifier;
@@ -45,7 +46,7 @@ export function attachTokenAuth(namespace: SocketNamespace) {
             socket.data.room = 'no-channel';
             next();
         } catch (err) {
-            logger.warn(err);
+            logger.warn('Invaild token. ' + err);
             return next(new Error('Invaild token'));
         }
     });
@@ -58,6 +59,7 @@ export default function socket(httpServer: http.Server) {
         DefaultEventsMap,
         SocketData
     >(httpServer);
+    const messageStore = new MessageStore();
 
     // middlewares
     const namespace = io.of(/^\/workspace-.+$/);
@@ -76,9 +78,6 @@ export default function socket(httpServer: http.Server) {
             if (socket.data.room) {
                 socket.leave(socket.data.room);
             }
-            logger.info(
-                `${user.username} move channel ${socket.data.room} -> ${channel}`
-            );
             socket.data.room = channel;
             socket.join(channel);
         });
@@ -90,11 +89,18 @@ export default function socket(httpServer: http.Server) {
                 date: dayjs().unix()
             };
 
-            if (socket.data.room) {
+            if (socket.data.room && message) {
                 logger.info(
                     `[Chat-${socket.data.room}] ${msg.sender}: ${msg.message}`
                 );
+                messageStore.saveMessage(socket.data.room, msg);
                 namespace.to(socket.data.room).emit('message', msg);
+            }
+        });
+
+        socket.on('select-messages', (room, callback) => {
+            if (room) {
+                callback(messageStore.findAllMessages(room));
             }
         });
     });

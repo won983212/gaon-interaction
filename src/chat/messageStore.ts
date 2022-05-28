@@ -1,22 +1,24 @@
-import { UserIdentifier } from '../types';
-
-export interface Message {
-    senderId: UserIdentifier;
-    message: string;
-}
+import { IMessage } from '@/types';
 
 export default class MessageStore {
-    private messages: Message[];
+    private messages: Map<string, IMessage[]>;
 
     constructor() {
-        this.messages = [];
+        this.messages = new Map();
     }
 
-    saveMessage(message: Message) {
-        this.messages.push(message);
+    saveMessage(room: string, message: IMessage) {
+        if (this.messages.has(room)) {
+            this.messages.get(room)?.push(message);
+        } else {
+            this.messages.set(room, [message]);
+        }
     }
 
-    findMessagesForUsers(userId: string): Message[] {
-        return this.messages;
+    findAllMessages(room: string): IMessage[] {
+        if (this.messages.has(room)) {
+            return this.messages.get(room) as IMessage[];
+        }
+        return [];
     }
 }
