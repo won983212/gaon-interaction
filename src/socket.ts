@@ -1,17 +1,28 @@
-import { Namespace, Server } from 'socket.io';
+import { Namespace, Server, Socket } from 'socket.io';
 import http from 'http';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
-import { IMessage, IUser, UserIdentifier } from './types';
+import { IUser, UserIdentifier } from './types';
 import { getUserInfo } from './api/auth';
 import logger from '@/logger';
 import cookie from 'cookie';
-import dayjs from 'dayjs';
-import MessageStore from '@/chat/messageStore';
+import Chat from '@/chat';
+import CodeShare from '@/codeshare';
 
 export interface SocketData {
     userToken: UserIdentifier;
     user: IUser;
     room: string;
+}
+
+export interface SocketMiddleware {
+    namespace: SocketNamespace;
+    socket: Socket<
+        DefaultEventsMap,
+        DefaultEventsMap,
+        DefaultEventsMap,
+        SocketData
+    >;
+    user: IUser;
 }
 
 export type SocketNamespace = Namespace<
@@ -53,15 +64,12 @@ export function attachTokenAuth(namespace: SocketNamespace) {
 }
 
 export default function socket(httpServer: http.Server) {
-    let io = new Server<
+    const io = new Server<
         DefaultEventsMap,
         DefaultEventsMap,
         DefaultEventsMap,
         SocketData
     >(httpServer);
-    const messageStore = new MessageStore();
-
-    // middlewares
     const namespace = io.of(/^\/workspace-.+$/);
     attachTokenAuth(namespace);
 
@@ -82,27 +90,10 @@ export default function socket(httpServer: http.Server) {
             socket.join(channel);
         });
 
-        socket.on('message', (message) => {
-            const msg: IMessage = {
-                sender: user.username,
-                message: message,
-                date: dayjs().unix()
-            };
-
-            if (socket.data.room && message) {
-                logger.info(
-                    `[Chat-${socket.data.room}] ${msg.sender}: ${msg.message}`
-                );
-                messageStore.saveMessage(socket.data.room, msg);
-                namespace.to(socket.data.room).emit('message', msg);
-            }
-        });
-
-        socket.on('select-messages', (room, callback) => {
-            if (room) {
-                callback(messageStore.findAllMessages(room));
-            }
-        });
+        // middlewares
+        const middlewareArg: SocketMiddleware = { namespace, socket, user };
+        Chat(middlewareArg);
+        CodeShare(middlewareArg);
     });
 
     return io;
