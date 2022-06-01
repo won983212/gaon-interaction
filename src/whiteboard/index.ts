@@ -1,8 +1,6 @@
 import { SocketMiddleware } from '@/socket';
 import { ListMemoryStore } from '@/util/memoryStore';
 
-const paintStore = new ListMemoryStore<SerializedDrawElement>();
-
 export type DrawElementIdentifer = string;
 export type DrawElementType = 'path' | 'line' | 'circle' | 'rectangle' | 'text';
 
@@ -16,19 +14,32 @@ export interface SerializedDrawElement {
     id: DrawElementIdentifer;
     type: DrawElementType;
     style: BrushStyle;
+    data: any;
 }
 
-export default function Whiteboard({
-    namespace,
-    socket,
-    user
-}: SocketMiddleware) {
-    socket.on('append-paint', (element: SerializedDrawElement) => {
-        console.log(element); // TODO 새로운 paint추가
+const paintStore = new ListMemoryStore<SerializedDrawElement>();
+
+export default function Whiteboard({ socket }: SocketMiddleware) {
+    socket.on('paint', (element) => {
+        if (socket.data.room) {
+            paintStore.append(socket.data.room, element);
+            socket.broadcast.to(socket.data.room).emit('paint', element);
+        }
     });
 
-    socket.on('remove-paint', (element: SerializedDrawElement) => {
-        console.log(element); // TODO paint 삭제
+    socket.on('remove-paint', (id: DrawElementIdentifer) => {
+        if (socket.data.room) {
+            paintStore.remove(socket.data.room,
+                (value) => value.id !== id);
+            socket.broadcast.to(socket.data.room).emit('remove-paint', id);
+        }
+    });
+
+    socket.on('clear-paints', (id: DrawElementIdentifer) => {
+        if (socket.data.room) {
+            paintStore.save(socket.data.room, []);
+            socket.broadcast.to(socket.data.room).emit('clear-paints');
+        }
     });
 
     socket.on('select-paints', (room, callback) => {

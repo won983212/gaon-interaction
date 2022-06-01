@@ -24,6 +24,13 @@ export class ListMemoryStore<T> extends MemoryStore<T[]> {
         super([]);
     }
 
+    remove(room: string, predicate: (value: T) => boolean) {
+        if (this.elements.has(room)) {
+            const filtered = this.elements.get(room)?.filter(predicate) as T[];
+            this.elements.set(room, filtered);
+        }
+    }
+
     append(room: string, value: T) {
         if (this.elements.has(room)) {
             this.elements.get(room)?.push(value);

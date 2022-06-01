@@ -7,7 +7,7 @@ import { ListMemoryStore } from '@/util/memoryStore';
 const messageStore = new ListMemoryStore<IMessage>();
 
 export default function Chat({ namespace, socket, user }: SocketMiddleware) {
-    socket.on('message', (message) => {
+    socket.on('message', (message: string) => {
         const msg: IMessage = {
             sender: user.username,
             message: message,

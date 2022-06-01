@@ -7,6 +7,7 @@ import logger from '@/logger';
 import cookie from 'cookie';
 import Chat from '@/chat';
 import CodeShare from '@/codeshare';
+import Whiteboard from '@/whiteboard';
 
 export interface SocketData {
     userToken: UserIdentifier;
@@ -16,21 +17,17 @@ export interface SocketData {
 
 export interface SocketMiddleware {
     namespace: SocketNamespace;
-    socket: Socket<
+    socket: Socket<DefaultEventsMap,
         DefaultEventsMap,
         DefaultEventsMap,
-        DefaultEventsMap,
-        SocketData
-    >;
+        SocketData>;
     user: IUser;
 }
 
-export type SocketNamespace = Namespace<
+export type SocketNamespace = Namespace<DefaultEventsMap,
     DefaultEventsMap,
     DefaultEventsMap,
-    DefaultEventsMap,
-    SocketData
->;
+    SocketData>;
 
 export function attachTokenAuth(namespace: SocketNamespace) {
     namespace.use(async (socket, next) => {
@@ -64,12 +61,10 @@ export function attachTokenAuth(namespace: SocketNamespace) {
 }
 
 export default function socket(httpServer: http.Server) {
-    const io = new Server<
+    const io = new Server<DefaultEventsMap,
         DefaultEventsMap,
         DefaultEventsMap,
-        DefaultEventsMap,
-        SocketData
-    >(httpServer);
+        SocketData>(httpServer);
     const namespace = io.of(/^\/workspace-.+$/);
     attachTokenAuth(namespace);
 
@@ -94,6 +89,7 @@ export default function socket(httpServer: http.Server) {
         const middlewareArg: SocketMiddleware = { namespace, socket, user };
         Chat(middlewareArg);
         CodeShare(middlewareArg);
+        Whiteboard(middlewareArg);
     });
 
     return io;
