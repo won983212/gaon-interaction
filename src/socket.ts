@@ -8,11 +8,12 @@ import cookie from 'cookie';
 import Chat from '@/chat';
 import CodeShare from '@/codeshare';
 import Whiteboard from '@/whiteboard';
+import { getEmptyRoomId } from '@/util/room';
 
 export interface SocketData {
     userToken: UserIdentifier;
     user: IUser;
-    room: string;
+    room: number;
 }
 
 export interface SocketMiddleware {
@@ -51,7 +52,7 @@ export function attachTokenAuth(namespace: SocketNamespace) {
             logger.info(`Authenticated ${auth.userId}`);
             socket.data.user = response.data;
             socket.data.userToken = { userId: auth.userId, token: auth.token };
-            socket.data.room = 'no-channel';
+            socket.data.room = getEmptyRoomId();
             next();
         } catch (err) {
             logger.warn('Invaild token. ' + err);
@@ -74,15 +75,16 @@ export default function socket(httpServer: http.Server) {
             return;
         }
 
-        socket.on('channel', (channel) => {
+        socket.on('channel', (channel: number) => {
             if (!channel) {
-                channel = 'no-channel';
+                channel = getEmptyRoomId();
             }
             if (socket.data.room) {
-                socket.leave(socket.data.room);
+                socket.leave(socket.data.room.toString());
             }
+            logger.info(`'${socket.data.user?.username}' move channel ${socket.data.room} -> ${channel}`);
             socket.data.room = channel;
-            socket.join(channel);
+            socket.join(channel.toString());
         });
 
         // middlewares

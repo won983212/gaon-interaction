@@ -1,17 +1,17 @@
 export class MemoryStore<T> {
-    protected elements: Map<string, T>;
-    private defaultValue: T;
+    protected elements: Map<number, T>;
+    private readonly defaultValue: T;
 
     constructor(defaultValue: T) {
         this.elements = new Map();
         this.defaultValue = defaultValue;
     }
 
-    save(room: string, value: T) {
+    save(room: number, value: T) {
         this.elements.set(room, value);
     }
 
-    find(room: string): T {
+    find(room: number): T {
         if (this.elements.has(room)) {
             return this.elements.get(room) as T;
         }
@@ -24,18 +24,18 @@ export class ListMemoryStore<T> extends MemoryStore<T[]> {
         super([]);
     }
 
-    remove(room: string, predicate: (value: T) => boolean) {
+    remove(room: number, predicate: (value: T) => boolean) {
         if (this.elements.has(room)) {
             const filtered = this.elements.get(room)?.filter(predicate) as T[];
-            this.elements.set(room, filtered);
+            this.save(room, filtered);
         }
     }
 
-    append(room: string, value: T) {
+    append(room: number, value: T) {
         if (this.elements.has(room)) {
             this.elements.get(room)?.push(value);
         } else {
-            this.elements.set(room, [value]);
+            this.save(room, [value]);
         }
     }
 }
