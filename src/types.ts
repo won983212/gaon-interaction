@@ -14,6 +14,12 @@ export interface IUser {
     job: string;
 }
 
+export interface IConnectedUser {
+    socketId: string;
+    username: string;
+    mute: boolean;
+}
+
 export interface IMessage {
     sender: string;
     message: string;

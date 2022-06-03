@@ -1,7 +1,7 @@
 import { Namespace, Server, Socket } from 'socket.io';
 import http from 'http';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
-import { IUser, UserIdentifier } from './types';
+import { IConnectedUser, IUser, UserIdentifier } from './types';
 import { getUserInfo } from './api/auth';
 import logger from '@/logger';
 import cookie from 'cookie';
@@ -9,6 +9,7 @@ import Chat from '@/chat';
 import CodeShare from '@/codeshare';
 import Whiteboard from '@/whiteboard';
 import { getEmptyRoomId } from '@/util/room';
+import { ListMemoryStore } from '@/util/memoryStore';
 
 export interface SocketData {
     userToken: UserIdentifier;
@@ -16,19 +17,38 @@ export interface SocketData {
     room: number;
 }
 
+export type SocketType = Socket<
+    DefaultEventsMap,
+    DefaultEventsMap,
+    DefaultEventsMap,
+    SocketData
+>;
+
 export interface SocketMiddleware {
     namespace: SocketNamespace;
-    socket: Socket<DefaultEventsMap,
-        DefaultEventsMap,
-        DefaultEventsMap,
-        SocketData>;
+    socket: SocketType;
     user: IUser;
 }
 
-export type SocketNamespace = Namespace<DefaultEventsMap,
+export type SocketNamespace = Namespace<
     DefaultEventsMap,
     DefaultEventsMap,
-    SocketData>;
+    DefaultEventsMap,
+    SocketData
+>;
+
+const onlineUsers = new ListMemoryStore<SocketType>();
+
+function convertToConnectedUser(socket: SocketType): IConnectedUser {
+    if (!socket.data.user) {
+        throw new Error('socket.data.user must not be undefined.');
+    }
+    return {
+        socketId: socket.id,
+        username: socket.data.user.username,
+        mute: false
+    };
+}
 
 export function attachTokenAuth(namespace: SocketNamespace) {
     namespace.use(async (socket, next) => {
@@ -62,10 +82,12 @@ export function attachTokenAuth(namespace: SocketNamespace) {
 }
 
 export default function socket(httpServer: http.Server) {
-    const io = new Server<DefaultEventsMap,
+    const io = new Server<
         DefaultEventsMap,
         DefaultEventsMap,
-        SocketData>(httpServer);
+        DefaultEventsMap,
+        SocketData
+    >(httpServer);
     const namespace = io.of(/^\/workspace-.+$/);
     attachTokenAuth(namespace);
 
@@ -75,16 +97,73 @@ export default function socket(httpServer: http.Server) {
             return;
         }
 
+        const leaveRoom = () => {
+            if (socket.data.user) {
+                if (socket.data.room) {
+                    socket.leave(socket.data.room.toString());
+                    socket.broadcast
+                        .to(socket.data.room.toString())
+                        .emit('leave-user', convertToConnectedUser(socket));
+                    onlineUsers.remove(
+                        socket.data.room,
+                        (element) => element.id !== socket.id
+                    );
+                }
+            }
+        };
+
         socket.on('channel', (channel: number) => {
-            if (!channel) {
-                channel = getEmptyRoomId();
+            try {
+                if (!channel) {
+                    channel = getEmptyRoomId();
+                }
+
+                if (socket.data.user) {
+                    leaveRoom();
+                    logger.info(
+                        `'${socket.data.user.username}' move channel ${socket.data.room} -> ${channel}`
+                    );
+                    socket.data.room = channel;
+                    socket.join(channel.toString());
+                    socket.broadcast
+                        .to(channel.toString())
+                        .emit('join-user', convertToConnectedUser(socket));
+                    onlineUsers.append(socket.data.room, socket);
+                }
+            } catch (e) {
+                logger.error(e);
             }
-            if (socket.data.room) {
-                socket.leave(socket.data.room.toString());
+        });
+
+        socket.on(
+            'select-users',
+            async (
+                channel: number,
+                callback: (users: IConnectedUser[]) => void
+            ) => {
+                try {
+                    const sockets = onlineUsers.find(channel);
+                    callback(
+                        sockets.map((socket): IConnectedUser => {
+                            if (!socket.data.user) {
+                                throw new Error('Socket data is null.');
+                            }
+                            return convertToConnectedUser(socket);
+                        })
+                    );
+                } catch (e) {
+                    callback([]);
+                    logger.error(e);
+                }
             }
-            logger.info(`'${socket.data.user?.username}' move channel ${socket.data.room} -> ${channel}`);
-            socket.data.room = channel;
-            socket.join(channel.toString());
+        );
+
+        socket.on('disconnect', () => {
+            try {
+                leaveRoom();
+            } catch (e) {
+                logger.error(e);
+            }
         });
 
         // middlewares
