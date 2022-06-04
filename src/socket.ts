@@ -17,12 +17,10 @@ export interface SocketData {
     room: number;
 }
 
-export type SocketType = Socket<
+export type SocketType = Socket<DefaultEventsMap,
     DefaultEventsMap,
     DefaultEventsMap,
-    DefaultEventsMap,
-    SocketData
->;
+    SocketData>;
 
 export interface SocketMiddleware {
     namespace: SocketNamespace;
@@ -30,12 +28,10 @@ export interface SocketMiddleware {
     user: IUser;
 }
 
-export type SocketNamespace = Namespace<
+export type SocketNamespace = Namespace<DefaultEventsMap,
     DefaultEventsMap,
     DefaultEventsMap,
-    DefaultEventsMap,
-    SocketData
->;
+    SocketData>;
 
 const onlineUsers = new ListMemoryStore<SocketType>();
 
@@ -82,12 +78,10 @@ export function attachTokenAuth(namespace: SocketNamespace) {
 }
 
 export default function socket(httpServer: http.Server) {
-    const io = new Server<
+    const io = new Server<DefaultEventsMap,
         DefaultEventsMap,
         DefaultEventsMap,
-        DefaultEventsMap,
-        SocketData
-    >(httpServer);
+        SocketData>(httpServer);
     const namespace = io.of(/^\/workspace-.+$/);
     attachTokenAuth(namespace);
 
@@ -143,14 +137,19 @@ export default function socket(httpServer: http.Server) {
             ) => {
                 try {
                     const sockets = onlineUsers.find(channel);
-                    callback(
-                        sockets.map((socket): IConnectedUser => {
-                            if (!socket.data.user) {
-                                throw new Error('Socket data is null.');
-                            }
-                            return convertToConnectedUser(socket);
-                        })
-                    );
+                    const thisUser = convertToConnectedUser(socket);
+                    let users = sockets.map((socket): IConnectedUser => {
+                        if (!socket.data.user) {
+                            throw new Error('Socket data is null.');
+                        }
+                        return convertToConnectedUser(socket);
+                    });
+
+                    if (!users.find((element) => element.socketId === thisUser.socketId)) {
+                        users = users.concat(thisUser);
+                    }
+
+                    callback(users);
                 } catch (e) {
                     callback([]);
                     logger.error(e);
