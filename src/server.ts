@@ -6,6 +6,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import router from './routes';
 import socket from './socket';
 import logger from '@/logger';
+const setupWSConnection = require('y-websocket/bin/utils').setupWSConnection;
 
 const app = express();
 
@@ -32,5 +33,10 @@ app.use((err: Error, _: Request, res: Response, __: NextFunction) => {
 const server = http.createServer(app);
 const io = socket(server);
 app.set('socket-io', io);
+io.on('connection', (socket) =>
+    setupWSConnection(socket.conn, socket.request, {
+        gc: socket.request.url?.slice(1) !== 'prosemirror-versions'
+    })
+);
 
 export default server;
