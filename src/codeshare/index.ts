@@ -3,12 +3,6 @@ import { MemoryStore } from '@/util/memoryStore';
 import logger from '@/logger';
 import { getValidatedRoom } from '@/util/room';
 
-export interface CodeChange {
-    rangeOffset: number;
-    rangeLength: number;
-    text: string;
-}
-
 const defaultLang = 'javascript';
 const codeLangStore = new MemoryStore<string>(defaultLang);
 

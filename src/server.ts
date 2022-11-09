@@ -6,10 +6,12 @@ import express, { NextFunction, Request, Response } from 'express';
 import router from './routes';
 import socket from './socket';
 import logger from '@/logger';
+import * as path from 'path';
 const setupWSConnection = require('y-websocket/bin/utils').setupWSConnection;
 
 const app = express();
 
+app.use('/static', express.static(path.join(__dirname, '../uploads')))
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

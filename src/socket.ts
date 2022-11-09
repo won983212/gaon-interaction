@@ -17,10 +17,12 @@ export interface SocketData {
     room: number;
 }
 
-export type SocketType = Socket<DefaultEventsMap,
+export type SocketType = Socket<
     DefaultEventsMap,
     DefaultEventsMap,
-    SocketData>;
+    DefaultEventsMap,
+    SocketData
+>;
 
 export interface SocketMiddleware {
     namespace: SocketNamespace;
@@ -28,10 +30,12 @@ export interface SocketMiddleware {
     user: IUser;
 }
 
-export type SocketNamespace = Namespace<DefaultEventsMap,
+export type SocketNamespace = Namespace<
     DefaultEventsMap,
     DefaultEventsMap,
-    SocketData>;
+    DefaultEventsMap,
+    SocketData
+>;
 
 const onlineUsers = new ListMemoryStore<SocketType>();
 
@@ -78,10 +82,14 @@ export function attachTokenAuth(namespace: SocketNamespace) {
 }
 
 export default function socket(httpServer: http.Server) {
-    const io = new Server<DefaultEventsMap,
+    const io = new Server<
         DefaultEventsMap,
         DefaultEventsMap,
-        SocketData>(httpServer);
+        DefaultEventsMap,
+        SocketData
+    >(httpServer, {
+        maxHttpBufferSize: 1e8
+    });
     const namespace = io.of(/^\/workspace-.+$/);
     attachTokenAuth(namespace);
 
@@ -145,7 +153,11 @@ export default function socket(httpServer: http.Server) {
                         return convertToConnectedUser(socket);
                     });
 
-                    if (!users.find((element) => element.socketId === thisUser.socketId)) {
+                    if (
+                        !users.find(
+                            (element) => element.socketId === thisUser.socketId
+                        )
+                    ) {
                         users = users.concat(thisUser);
                     }
 

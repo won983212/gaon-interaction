@@ -2,6 +2,7 @@
 /node_modules
 /logs
 config.json
+/uploads
 
 # Webstorm files
 .idea
