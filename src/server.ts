@@ -7,7 +7,8 @@ import router from './routes';
 import socket from './socket';
 import logger from '@/logger';
 import * as path from 'path';
-const setupWSConnection = require('y-websocket/bin/utils').setupWSConnection;
+import {YSocketIO} from 'y-socket.io/dist/server';
+import { Socket } from 'socket.io';
 
 const app = express();
 
@@ -34,11 +35,16 @@ app.use((err: Error, _: Request, res: Response, __: NextFunction) => {
 
 const server = http.createServer(app);
 const io = socket(server);
-app.set('socket-io', io);
-io.on('connection', (socket) =>
-    setupWSConnection(socket.conn, socket.request, {
-        gc: socket.request.url?.slice(1) !== 'prosemirror-versions'
+
+io.on('connection', (socket: Socket) => {
+    logger.info(`[connection] Connected with user: ${socket.id}`)
+    socket.on('disconnect', () => {
+        logger.info(`[disconnect] Disconnected with user: ${socket.id}`)
     })
-);
+})
+
+const ysocketio = new YSocketIO(io)
+ysocketio.initialize()
+app.set('socket-io', io);
 
 export default server;

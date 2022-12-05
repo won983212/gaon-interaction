@@ -23,7 +23,9 @@
     "webpack-node-externals": "^3.0.0",
     "winston": "^3.7.2",
     "winston-daily-rotate-file": "^4.6.1",
-    "y-websocket": "^1.4.3"
+    "y-socket.io": "^1.1.0",
+    "y-websocket": "^1.4.3",
+    "yjs": "^13.5.43"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.3",

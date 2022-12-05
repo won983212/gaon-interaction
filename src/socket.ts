@@ -90,6 +90,7 @@ export default function socket(httpServer: http.Server) {
     >(httpServer, {
         maxHttpBufferSize: 1e8
     });
+
     const namespace = io.of(/^\/workspace-.+$/);
     attachTokenAuth(namespace);
 
