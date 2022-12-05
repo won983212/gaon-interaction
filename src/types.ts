@@ -6,6 +6,7 @@ export interface UserIdentifier {
 export type UserStatus = 'online' | 'offline' | 'missed';
 
 export interface IUser {
+    id: number,
     userId: string;
     username: string;
     name: string;
@@ -15,9 +16,18 @@ export interface IUser {
 }
 
 export interface IConnectedUser {
+    id: number,
+    userId: string,
     socketId: string;
     username: string;
     mute: boolean;
+}
+
+export interface IPermission {
+    id: number,
+    projectId: number,
+    userId: number,
+    permission: number
 }
 
 export type MessageType = 'text' | 'file';
