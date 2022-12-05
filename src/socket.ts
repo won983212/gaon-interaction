@@ -2,7 +2,7 @@ import { Namespace, Server, Socket } from 'socket.io';
 import http from 'http';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import { IConnectedUser, IUser, UserIdentifier } from './types';
-import { getUserInfo } from './api/auth';
+import { getPermission, getUserInfo } from './api/auth';
 import logger from '@/logger';
 import cookie from 'cookie';
 import Chat from '@/chat';
@@ -44,6 +44,8 @@ function convertToConnectedUser(socket: SocketType): IConnectedUser {
         throw new Error('socket.data.user must not be undefined.');
     }
     return {
+        id: socket.data.user.id,
+        userId: socket.data.user.userId,
         socketId: socket.id,
         username: socket.data.user.username,
         mute: false
@@ -169,6 +171,39 @@ export default function socket(httpServer: http.Server) {
                 }
             }
         );
+
+        socket.on('kick-user', async (workspaceId: number, channelId: number, userId: number) => {
+            try {
+                if (socket.data.user) {
+                    if (socket.data.room) {
+                        let request = (await getPermission(workspaceId, socket.data.user.id)).data;
+                        if (request.permission <= 0) {
+                            throw new Error(`User ${socket.data.user.id} tried to kick user ${userId} but failed.`);
+                        }
+                        const sockets = onlineUsers.find(channelId);
+                        const found = sockets.find((value) => {
+                            if (value.data.user) {
+                                return value.data.user.id === userId;
+                            }
+                            return false;
+                        });
+                        if (found) {
+                            found.leave(socket.data.room.toString());
+                            found.broadcast
+                                .to(socket.data.room.toString())
+                                .emit('leave-user', convertToConnectedUser(found));
+                            onlineUsers.remove(
+                                socket.data.room,
+                                (element) => element.id !== found.id
+                            );
+                            found.disconnect(true);
+                        }
+                    }
+                }
+            } catch (e) {
+                logger.error(e);
+            }
+        });
 
         socket.on('disconnect', () => {
             try {
