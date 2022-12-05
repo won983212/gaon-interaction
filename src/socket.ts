@@ -175,7 +175,6 @@ export default function socket(httpServer: http.Server) {
             try {
                 if (socket.data.user) {
                     if (socket.data.room) {
-                        console.log(`userId: ${userId} channelId: ${channelId}`);
                         let request = (await getPermission(workspaceId, socket.data.user.id)).data;
                         if (request.permission <= 0) {
                             throw new Error(`User ${socket.data.user.id} tried to kick user ${userId} but failed.`);
@@ -188,7 +187,6 @@ export default function socket(httpServer: http.Server) {
                             return false;
                         });
                         if (found) {
-                            console.log("found");
                             found.leave(socket.data.room.toString());
                             found.broadcast
                                 .to(socket.data.room.toString())
@@ -199,7 +197,6 @@ export default function socket(httpServer: http.Server) {
                             );
                             found.disconnect(true);
                         }
-                        
                     }
                 }
             } catch (e) {
