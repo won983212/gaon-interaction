@@ -30,21 +30,18 @@ const logger = winston.createLogger({
     ]
 });
 
-// production이 아닌 환경에서는 좀 더 pretty하게
-if (process.env.NODE_ENV !== 'production') {
-    logger.add(
-        new winston.transports.Console({
-            format: winston.format.combine(
-                winston.format.timestamp({
-                    format: 'YYYY-MM-DD HH:MM:SS'
-                }),
-                winston.format.colorize(),
-                winston.format.printf(
-                    (info) => `${info.level}: ${info.message}`
-                )
+logger.add(
+    new winston.transports.Console({
+        format: winston.format.combine(
+            winston.format.timestamp({
+                format: 'YYYY-MM-DD HH:MM:SS'
+            }),
+            winston.format.colorize(),
+            winston.format.printf(
+                (info) => `${info.level}: ${info.message}`
             )
-        })
-    );
-}
+        )
+    })
+);
 
 export default logger;

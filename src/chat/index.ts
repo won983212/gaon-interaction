@@ -19,8 +19,11 @@ function hash(len: number) {
 }
 
 function generate32Hash() {
+    if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
+    }
     while (true) {
-        const name = hash(32)
+        const name = hash(32);
         const path = uploadPath + '/' + name;
         if (!fs.existsSync(path)) {
             return name;
@@ -67,14 +70,14 @@ export default function Chat({ namespace, socket, user }: SocketMiddleware) {
                 `[File-${socket.data.room}] ${msg.sender}: ${msg.name}`
             );
             messageStore.append(room, msg);
-            namespace.to(room.toString()).emit('message', msg);
             fs.writeFile(`${uploadPath}/${actualFileName}`, file, (err) => {
                 if (err) {
                     callback(false);
                     logger.error(err);
                 } else {
+                    namespace.to(room.toString()).emit('message', msg);
                     callback(true);
-                    logger.info(`Write to ${actualFileName}`)
+                    logger.info(`Write to ${actualFileName}`);
                 }
             });
         } else {
